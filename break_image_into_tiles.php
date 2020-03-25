@@ -17,6 +17,7 @@ CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFT
 DEALINGS IN THE SOFTWARE.
 
 */
+var_dump($argv);
 $fileName = $argv[1];
 $outDirectory = $argv[2];
 $tileWidth = @max(416, (int) $argv[3]);
@@ -289,7 +290,9 @@ function convertAnnotations(array $inputAns, int $tileWidth, int $tileHeight, $m
 }
 
 
-function processFile(string $fileName, string $outDirectory, int $tileWidth, int $tileHeight) : void {
+function processFile(string $fileName, string $outDirectory, int $tileWidth, int $tileHeight) : void
+{
+	var_dump($fileName, $outDirectory, $tileWidth, $tileHeight);
 	$imagePathInfo = pathinfo($fileName);
 	$baseName = $imagePathInfo['filename'];
 
@@ -324,6 +327,8 @@ function processFile(string $fileName, string $outDirectory, int $tileWidth, int
 //	var_export($convertedAns);
 	$origImage = imagecreatefromjpeg($fileName);
 
+	$sha1_orig = sha1_file($fileName);
+	
 	// There will be (($fullFitWidth + 1) * ($fullFitHeight + 1)) tiles
 	for ($tileRow = 0; $tileRow < ($fullFitWidth + $additionalHorizontalTile); $tileRow++) {
 		for ($tileCol = 0; $tileCol < ($fullFitHeight + $additionalVerticalTile) ; $tileCol++) {
@@ -346,18 +351,20 @@ function processFile(string $fileName, string $outDirectory, int $tileWidth, int
 					// printf("Could not copy tile [%d : %d]\n", tileRow, tileCol);
 				}
 
-				$tileFileName = sprintf("%s%s-%dx%d-%02d-%02d.jpg",
+				$tileFileName = sprintf("%s%s-%s-%dx%d-%02d-%02d.jpg",
 											$outDirectory . DIRECTORY_SEPARATOR,
 											$baseName,
+											substr($sha1_orig, 0, 16),
 											$tileWidth,
 											$tileHeight,
 											$tileRow,
 											$tileCol);
 				imagejpeg($tile, $tileFileName);
 
-				$tileAnsFileName = sprintf("%s%s-%dx%d-%02d-%02d.txt",
+				$tileAnsFileName = sprintf("%s%s-%s-%dx%d-%02d-%02d.txt",
 											$outDirectory . DIRECTORY_SEPARATOR,
 											$baseName,
+											substr($sha1_orig, 0, 16),
 											$tileWidth,
 											$tileHeight,
 											$tileRow,
