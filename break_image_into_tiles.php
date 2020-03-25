@@ -291,7 +291,6 @@ function convertAnnotations(array $inputAns, int $tileWidth, int $tileHeight, $m
 
 function processFile(string $fileName, string $outDirectory, int $tileWidth, int $tileHeight) : void
 {
-	var_dump($fileName, $outDirectory, $tileWidth, $tileHeight);
 	$imagePathInfo = pathinfo($fileName);
 	$baseName = $imagePathInfo['filename'];
 
