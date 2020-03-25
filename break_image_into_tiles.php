@@ -17,7 +17,6 @@ CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFT
 DEALINGS IN THE SOFTWARE.
 
 */
-var_dump($argv);
 $fileName = $argv[1];
 $outDirectory = $argv[2];
 $tileWidth = @max(416, (int) $argv[3]);
