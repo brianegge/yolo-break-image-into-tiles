@@ -64,16 +64,19 @@ function getAnnotationsFromFile(string $fileName, int $imageWidth, int $imageHei
 
 function convertAnnotations(array $inputAns, int $tileWidth, int $tileHeight, $minObjectSegmentWidth, $minObjectSegmentHeight) : array {
 
-	$outputAns = [];
+	$outputAns = []; // [col][row]
+  // printf("tile size %f,%f\n", $tileWidth, $tileHeight);
 	foreach ($inputAns as $inputAn) {
+    //printf("input %d: %f,%f %f,%f\n", $inputAn['label'], $inputAn['upLeftX'], $inputAn['upLeftY'], $inputAn['downRightX'], $inputAn['downRightY']);
 		$tileUL_W = (int) floor( $inputAn['upLeftX'] / $tileWidth );
 		$tileUL_H = (int) floor( $inputAn['upLeftY'] / $tileHeight );
 		$tileDR_W = (int) floor( $inputAn['downRightX'] / $tileWidth );
 		$tileDR_H = (int) floor( $inputAn['downRightY'] / $tileHeight );
+    //printf("tile $tileUL_W,$tileUL_H to $tileDR_W,$tileDR_H\n");
 
 		// The simplest case
 		if ($tileUL_W === $tileDR_W && $tileUL_H === $tileDR_H) {
-			// echo "One tile\n";
+			echo "One tile\n";
 
 			$upLeftX_TileOffset = $inputAn['upLeftX'] - ($tileUL_W * $tileWidth);
 			$upLeftY_TileOffset = $inputAn['upLeftY'] - ($tileUL_H * $tileHeight);
@@ -94,18 +97,19 @@ function convertAnnotations(array $inputAns, int $tileWidth, int $tileHeight, $m
 			$centerXrel = $centerXpx / $tileWidth;
 			$centerYrel = $centerYpx / $tileHeight;
 
-			// printf("0] UL [$upLeftX_TileOffset $upLeftY_TileOffset] DR [$downRightX_TileOffset $downRightY_TileOffset] BBOX_PX [$bboxWidth_px $bboxHeight_px] BBOX_REL [$bboxWidth_rel $bboxHeight_rel] CENTER_PX [$centerXpx $centerYpx] CENTER_REL[$centerXrel $centerYrel]\n");
+			printf("0] UL [$upLeftX_TileOffset $upLeftY_TileOffset] DR [$downRightX_TileOffset $downRightY_TileOffset] BBOX_PX [$bboxWidth_px $bboxHeight_px] BBOX_REL [$bboxWidth_rel $bboxHeight_rel] CENTER_PX [$centerXpx $centerYpx] CENTER_REL[$centerXrel $centerYrel]\n");
 		
 			$outputAns[$tileUL_W][$tileUL_H][] = $thisAn = sprintf("%d %1.14f %1.14f %1.14f %1.14f", $inputAn['label'], $centerXrel, $centerYrel, $bboxWidth_rel, $bboxHeight_rel);
 		} else {
-			// printf("Horiz splits $tileDR_W $tileUL_W over %d\n", $tileDR_W - $tileUL_W);
-			// printf("Vertic splits $tileDR_H $tileUL_H over %d\n", $tileDR_H - $tileUL_H);
-			// echo "Splits over\n";
+			//printf("Horiz splits $tileDR_W $tileUL_W over %d\n", $tileDR_W - $tileUL_W);
+			//printf("Vertic splits $tileDR_H $tileUL_H over %d\n", $tileDR_H - $tileUL_H);
+			//echo "Splits over\n";
 			$tileCols = $tileDR_W - $tileUL_W;
 			$tileRows = $tileDR_H - $tileUL_H;
-			// printf("W:[$tileUL_W] [$tileDR_W]\n");
-			// printf("H:[$tileUL_H] [$tileDR_H]\n");
+			//printf("W:[$tileUL_W] [$tileDR_W] cols=$tileCols\n");
+			//printf("H:[$tileUL_H] [$tileDR_H] rows=$tileRows\n");
 			if ($tileRows === 0) {
+        echo "One row\n";
 				for ($tileCounter = 0; $tileCounter <= $tileCols; $tileCounter++) {
 					$upLeftY_TileOffset = $inputAn['upLeftY'] - ($tileUL_H * $tileHeight);
 					$downRightY_TileOffset = $inputAn['downRightY'] - ($tileDR_H * $tileHeight);
@@ -139,12 +143,13 @@ function convertAnnotations(array $inputAns, int $tileWidth, int $tileHeight, $m
 					$centerXrel = $centerXpx / $tileWidth;
 					$centerYrel = $centerYpx / $tileHeight;
 
-					// printf("1] UL [$upLeftX_TileOffset $upLeftY_TileOffset] DR [$downRightX_TileOffset $downRightY_TileOffset] BBOX_PX [$bboxWidth_px $bboxHeight_px] BBOX_REL [$bboxWidth_rel $bboxHeight_rel] CENTER_PX [$centerXpx $centerYpx] CENTER_REL[$centerXrel $centerYrel]\n");
+					printf("1] UL [$upLeftX_TileOffset $upLeftY_TileOffset] DR [$downRightX_TileOffset $downRightY_TileOffset] BBOX_PX [$bboxWidth_px $bboxHeight_px] BBOX_REL [$bboxWidth_rel $bboxHeight_rel] CENTER_PX [$centerXpx $centerYpx] CENTER_REL[$centerXrel $centerYrel]\n");
 
-					$outputAns[$tileUL_W][$tileUL_H + $tileCounter][] = $thisAn = sprintf("%d %1.14f %1.14f %1.14f %1.14f", $inputAn['label'], $centerXrel, $centerYrel, $bboxWidth_rel, $bboxHeight_rel);
+					$outputAns[$tileUL_W + $tileCounter][$tileUL_H][] = $thisAn = sprintf("%d %1.14f %1.14f %1.14f %1.14f", $inputAn['label'], $centerXrel, $centerYrel, $bboxWidth_rel, $bboxHeight_rel);
 //					// echo "$thisAn\n";
 				}
 			} else if ($tileCols === 0) {
+        echo "One column\n";
 				for ($tileCounter = 0; $tileCounter <= $tileRows; $tileCounter++) {
 					$upLeftX_TileOffset = $inputAn['upLeftX'] - ($tileUL_W * $tileWidth);
 					$downRightX_TileOffset = $inputAn['downRightX'] - ($tileDR_W * $tileWidth);
@@ -179,36 +184,37 @@ function convertAnnotations(array $inputAns, int $tileWidth, int $tileHeight, $m
 					$centerXrel = $centerXpx / $tileWidth;
 					$centerYrel = $centerYpx / $tileHeight;
 
-					// printf("2] UL [$upLeftX_TileOffset $upLeftY_TileOffset] DR [$downRightX_TileOffset $downRightY_TileOffset] BBOX_PX [$bboxWidth_px $bboxHeight_px] BBOX_REL [$bboxWidth_rel $bboxHeight_rel] CENTER_PX [$centerXpx $centerYpx] CENTER_REL[$centerXrel $centerYrel]\n");
+					printf("2] UL [$upLeftX_TileOffset $upLeftY_TileOffset] DR [$downRightX_TileOffset $downRightY_TileOffset] BBOX_PX [$bboxWidth_px $bboxHeight_px] BBOX_REL [$bboxWidth_rel $bboxHeight_rel] CENTER_PX [$centerXpx $centerYpx] CENTER_REL[$centerXrel $centerYrel]\n");
 
-					$outputAns[$tileUL_W + $tileCounter][$tileUL_H][] = $thisAn = sprintf("%d %1.14f %1.14f %1.14f %1.14f", $inputAn['label'], $centerXrel, $centerYrel, $bboxWidth_rel, $bboxHeight_rel);
-//					// echo "$thisAn\n";
+					$outputAns[$tileUL_W][$tileUL_H + $tileCounter][] = $thisAn = sprintf("%d %1.14f %1.14f %1.14f %1.14f", $inputAn['label'], $centerXrel, $centerYrel, $bboxWidth_rel, $bboxHeight_rel);
+          // printf("Tile %d,%d = $upLeftX_TileOffset,$upLeftY_TileOffset to $downRightX_TileOffset,$downRightY_TileOffset\n", $tileUL_W + $tileCounter, $tileUL_H);
+					echo "$thisAn\n";
 				}
 			} else {
 				$tileRows++;
 				$tileCols++;
 				$tileNumber = (($tileRows + 0) * ($tileCols + 0));
 
-				// printf("It's complicated: TileNumber=%d\n", $tileNumber);
+				printf("It's complicated: TileNumber=%d\n", $tileNumber);
 
 				for ($tileCounter = 0; $tileCounter < $tileNumber; $tileCounter++) {
 					if (($tileCounter % $tileCols) === 0) { // first in a row
-						// echo "First in the row\n";
+						//echo "First in the row\n";
 						
 						$upLeftX_TileOffset = $inputAn['upLeftX'] - ($tileUL_W * $tileWidth);
 						$downRightX_TileOffset = $tileWidth - 1;  // should it be -1 ?
 					
 						if ($tileCounter === 0) {
-							// echo "First in the first row\n";
+							//echo "First in the first row\n";
 							$upLeftY_TileOffset = $inputAn['upLeftY'] - ($tileUL_H * $tileHeight);
 							$downRightY_TileOffset = $tileHeight - 1; // should it be -1 ?
 						} else {
 							$upLeftY_TileOffset = 0;
 							if (($tileCounter + $tileCols) >= $tileNumber) { // last row
-								// echo "First in the last row\n";
+								//echo "First in the last row\n";
 								$downRightY_TileOffset = $inputAn['downRightY'] - ($tileDR_H * $tileHeight);
 							} else {
-								// echo "First in a mid row\n";
+								//echo "First in a mid row\n";
 								$downRightY_TileOffset = $tileHeight - 1; // should it be -1 ?
 							}
 						}
@@ -236,22 +242,22 @@ function convertAnnotations(array $inputAns, int $tileWidth, int $tileHeight, $m
 							}
 						}
 					} else { // a horizontally mid tile 
-						// echo "Mid in the row\n";
+						echo "Mid in the row\n";
 
 						$upLeftX_TileOffset = 0;
 						$downRightX_TileOffset = $tileWidth - 1;  // should it be -1 ?
 						if ($tileCounter < $tileCols) { // first row
-							// echo "First in a mid column\n";
+							echo "First in a mid column\n";
 							
 							$upLeftY_TileOffset = $inputAn['upLeftY'] - ($tileUL_H * $tileHeight);
 							$downRightY_TileOffset = $tileHeight - 1; // should it be -1 ?
 						} else if (($tileCounter + $tileCols) >= $tileNumber) { // last row
-							// echo "Last in a mid column\n";
+							echo "Last in a mid column\n";
 
 							$upLeftY_TileOffset = 0;
 							$downRightY_TileOffset = $inputAn['downRightY'] - ($tileDR_H * $tileHeight);
 						} else { // mid row
-							// echo "Mid in a mid column\n";
+							echo "Mid in a mid column\n";
 
 							$upLeftY_TileOffset = 0;
 							$downRightY_TileOffset = $tileHeight - 1; // should it be -1 ?
@@ -262,7 +268,7 @@ function convertAnnotations(array $inputAns, int $tileWidth, int $tileHeight, $m
 					$bboxHeight_px = $downRightY_TileOffset - $upLeftY_TileOffset;
 					
 					if ($minObjectSegmentWidth > $bboxWidth_px || $minObjectSegmentHeight > $bboxHeight_px) {
-						// echo "!!!Skip due to small size!!!\n";
+						echo "!!!Skip due to small size: ${bboxWidth_px}x${bboxHeight_px} !!!\n";
 						continue;
 					}
 
@@ -275,7 +281,7 @@ function convertAnnotations(array $inputAns, int $tileWidth, int $tileHeight, $m
 					$centerXrel = $centerXpx / $tileWidth;
 					$centerYrel = $centerYpx / $tileHeight;
 
-					// printf("3] UL [$upLeftX_TileOffset $upLeftY_TileOffset] DR [$downRightX_TileOffset $downRightY_TileOffset] BBOX_PX [$bboxWidth_px $bboxHeight_px] BBOX_REL [$bboxWidth_rel $bboxHeight_rel] CENTER_PX [$centerXpx $centerYpx] CENTER_REL[$centerXrel $centerYrel]\n");
+					printf("3] UL [$upLeftX_TileOffset $upLeftY_TileOffset] DR [$downRightX_TileOffset $downRightY_TileOffset] BBOX_PX [$bboxWidth_px $bboxHeight_px] BBOX_REL [$bboxWidth_rel $bboxHeight_rel] CENTER_PX [$centerXpx $centerYpx] CENTER_REL[$centerXrel $centerYrel]\n");
 
 					$outputAns[$tileUL_W + ($tileCounter % $tileCols)][$tileUL_H + ((int) floor($tileCounter / $tileCols))][] = $thisAn = sprintf("%d %1.14f %1.14f %1.14f %1.14f", $inputAn['label'], $centerXrel, $centerYrel, $bboxWidth_rel, $bboxHeight_rel);
 //					// echo "$thisAn\n";
@@ -291,6 +297,7 @@ function convertAnnotations(array $inputAns, int $tileWidth, int $tileHeight, $m
 
 function processFile(string $fileName, string $outDirectory, int $tileWidth, int $tileHeight) : void
 {
+	printf("Processing %s\n", $fileName);
 	$imagePathInfo = pathinfo($fileName);
 	$baseName = $imagePathInfo['filename'];
 
@@ -318,8 +325,8 @@ function processFile(string $fileName, string $outDirectory, int $tileWidth, int
 	$annotationsFile = $imagePathInfo['dirname'] . DIRECTORY_SEPARATOR . $baseName . '.txt';
 	$annotations = getAnnotationsFromFile($annotationsFile, $imageWidth, $imageHeight);
 	
-	$minObjectSegmentWidth = 20;
-	$minObjectSegmentHeight = 20;
+	$minObjectSegmentWidth = 32;
+	$minObjectSegmentHeight = 32;
 	
   	$convertedAns = convertAnnotations($annotations, $tileWidth, $tileHeight, $minObjectSegmentWidth, $minObjectSegmentHeight);
 //	var_export($convertedAns);
@@ -343,6 +350,7 @@ function processFile(string $fileName, string $outDirectory, int $tileWidth, int
 				$srcY = $tileRow * $tileHeight;
 				$srcWidth = $tileWidth;
 				$srcHeight = $tileHeight;
+        print("Creating image for tile col=$tileCol,row=$tileRow from x=$srcX,y=$srcY\n");
 			
 				$res = imagecopy($tile, $origImage, $destX, $destY, $srcX, $srcY, $srcWidth, $srcHeight);
 				if (FALSE === $res) {
